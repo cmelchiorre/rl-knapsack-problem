@@ -1,0 +1,8 @@
+Knapsack(
+    capacity=100, 
+    items=(
+        ('bananas', w=10, v=5),
+        ('apples', w=12, v=15),
+        ('gold', w=4, v=195)
+    )
+)

@@ -1,0 +1,7 @@
+<expression> ::= "Knapsack(" <capacity> "," <item_list> ")"
+<capacity> ::= "capacity=" <number>
+<item_list> ::= "items=(" <item> "+ )"
+<item> ::= "( '" <name> "', w=" <weight> ", v=" <value> ")"
+<name> ::= <string>
+<weight> ::= <integer>
+<value> ::= <float>
