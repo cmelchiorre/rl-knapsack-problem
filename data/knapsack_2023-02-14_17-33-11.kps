@@ -1,0 +1,29 @@
+Knapsack( 
+	capacity=878, 
+	items=(
+		('pot', w=24, v=928),
+		('food', w=60, v=451),
+		('camping_light', w=8, v=995),
+		('sunscreen', w=10, v=479),
+		('pocket_knife', w=10, v=26),
+		('bowl', w=99, v=884),
+		('flashlight', w=48, v=24),
+		('map', w=23, v=848),
+		('mirror', w=98, v=19),
+		('whistle', w=59, v=882),
+		('bug_spray', w=55, v=320),
+		('stove', w=60, v=601),
+		('first_aid_kit', w=2, v=74),
+		('sunglasses', w=35, v=757),
+		('camping_spoon', w=86, v=411),
+		('mug', w=82, v=107),
+		('towel', w=48, v=95),
+		('matches', w=20, v=836),
+		('camping_fork', w=18, v=480),
+		('pan', w=41, v=66),
+		('sleeping_bag', w=54, v=231),
+		('plate', w=48, v=651),
+		('multi_tool', w=43, v=788),
+		('water_bottle', w=69, v=147)
+	)
+)

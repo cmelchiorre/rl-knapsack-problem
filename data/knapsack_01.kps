@@ -3,6 +3,18 @@ Knapsack(
     items=(
         ('bananas', w=10, v=5),
         ('apples', w=12, v=15),
-        ('gold', w=4, v=195)
+		('camping_fork', w=7, v=555),
+		('towel', w=58, v=65),
+		('hat', w=57, v=21),
+		('extra_clothes', w=72, v=511),
+		('first_aid_kit', w=94, v=963),
+		('sleeping_bag', w=56, v=605),
+		('multi_tool', w=28, v=312),
+		('stove', w=87, v=603),
+		('whistle', w=22, v=959),
+		('plate', w=12, v=426),
+		('bowl', w=32, v=397),
+		('pot', w=43, v=239),
+		('mirror', w=70, v=927)
     )
 )

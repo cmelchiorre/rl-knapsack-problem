@@ -25,9 +25,10 @@ class UninitializedKnapsackEnvironmentException(Exception):
 
 class KnapsackEnv(gym.Env):
 
-    generator = KnapsackRandomGenerator(MAX_KNAPSACK_ITEMS)
+    generator = KnapsackRandomGenerator()
 
     def __check_initialized_environment(self):
+        debug(f"[env:__check_initialized_environment] self.knapsack={self.knapsack}")
         if self.knapsack == None:
             raise UninitializedKnapsackEnvironmentException("Unintialized enviornment: Knapsack not set")
 
@@ -56,7 +57,7 @@ class KnapsackEnv(gym.Env):
                 
         self.observation_space = gym.spaces.Box(
             low=0, high=np.inf,
-            shape=(2+(MAX_KNAPSACK_ITEMS*3)), 
+            shape=(2+(MAX_KNAPSACK_ITEMS*3), ), 
             dtype=np.int32)
 
         self.action_space = gym.spaces.Discrete(len(ENV_ACTIONS))
@@ -70,14 +71,15 @@ class KnapsackEnv(gym.Env):
         Since observations must have a fixed size, the list is padded with *[-1, -1, -1]
         to reach the size corresponding to MAX_KNAPSACK_ITEMS items
         """
+        debug(f"[env:get_observation] self.knapsack={self.knapsack}")
 
         self.__check_initialized_environment()
 
         n = len(self.knapsack.items)
         
-        obs = np.full(2 + MAX_KNAPSACK_ITEMS * 3, -1)
+        obs = np.full(2 + MAX_KNAPSACK_ITEMS * 3, -1, dtype=np.float32)
         obs[0] = self.knapsack.capacity
-        obs[1] = self.knapsack.current_pos
+        obs[1] = self.current_pos
 
         for k in range(n):
             item = self.knapsack.items[k]
@@ -92,6 +94,8 @@ class KnapsackEnv(gym.Env):
         Returns total weight for selected items in the current
         environment status
         """
+        debug(f"[env:get_total_weight] self.knapsack={self.knapsack}")
+
         self.__check_initialized_environment()
 
         weight_sum = 0
@@ -107,6 +111,8 @@ class KnapsackEnv(gym.Env):
         Returns total value for selected items in the current
         environment status
         """
+        debug(f"[env:get_total_value] self.knapsack={self.knapsack}")
+
         self.__check_initialized_environment()
 
         value_sum = 0
@@ -123,6 +129,7 @@ class KnapsackEnv(gym.Env):
         """
         Perform an action in the environment
         """
+        debug(f"[env:step] self.knapsack={self.knapsack}")
         self.__check_initialized_environment()
 
         obs_ = self.get_observation()
@@ -145,7 +152,7 @@ class KnapsackEnv(gym.Env):
         # ACTION_DOWN
         # increases pointer position unless it is already 0
         elif action == ACTION_DOWN:
-            if self.current_pos < len(self.knapsack.items):
+            if self.current_pos < len(self.knapsack.items)-1:
                 self.current_pos += 1
             else:
                 self.current_pos = len(self.knapsack.items)-1
@@ -155,7 +162,7 @@ class KnapsackEnv(gym.Env):
         # adds the item at current position to the set of selected items
         elif action == ACTION_SELECT:
             # check if by adding the item the total weight overflows capacity 
-            if previous_state_weight + self.selected_items[self.current_pos].weight <= self.knapsack.capacity:
+            if previous_state_weight + self.knapsack.items[self.current_pos].weight <= self.knapsack.capacity:
                 self.selected_items[self.current_pos] = 1
             else:
                 valid_action = False
@@ -171,15 +178,12 @@ class KnapsackEnv(gym.Env):
         done = False
         info = { 'valid_action': valid_action }
 
-        # recalculate total value after action (ie. on new observation)
-        new_value = np.sum(obs[np.where(obs[:, 2] == 1),  1])
-        
         # reward is the increase/decrease in value between the two observations 
         # in case an invalid action was selected return the corresponding penalty
         reward = ( next_state_eval - previosu_state_eval 
                         if valid_action 
                             else PENALTY_INVALID_ACTION )
-
+        debug(f"[env:step] returning self.knapsack={self.knapsack}")
         return obs, reward, done, info
 
 
@@ -188,8 +192,7 @@ class KnapsackEnv(gym.Env):
         Resets the environment to the state corresponding to the given knapsack
         If Non is passed as parameter, a random knapsack is generated
         """
-        self.__check_initialized_environment()
-
+        debug(f"[env:reset] self.knapsack={self.knapsack}")
         if knapsack is not None:
             self.knapsack = knapsack
         else:
@@ -197,11 +200,25 @@ class KnapsackEnv(gym.Env):
 
         self.current_pos = 0
         self.selected_items = self.selected_items = [0] * len(self.knapsack.items)
+        debug(f"[env:reset] returning self.knapsack={self.knapsack}")
+        return self.get_observation()
 
     def render(self, mode='text'):
+
         self.__check_initialized_environment()
         
         if mode == 'text':
+            str = "-"*100+"\n"
+            str += f"capacity = {self.knapsack.capacity}\n"
+            str += f"current_pos = {self.current_pos}\n"
+            str += f"total value = {self.get_total_value()}\n"
+            str += "--------\n"
+            for idx, item in enumerate(self.knapsack.items):
+                str += ( "[ ] " if self.selected_items[idx] == 0 else "[X] ")
+                str += f"'{item.name} w={item.weight} v={item.value}"
+                str += ( "<<<<\n" if self.current_pos == idx else "\n" )
+            return str
+        if mode == 'repr':
             return self.knapsack.to_repr()
         # elif mode == 'image':
         #   ...
@@ -209,6 +226,9 @@ class KnapsackEnv(gym.Env):
 
 
     def close(self):
+        
+        debug(f"[env:close] self.knapsack={self.knapsack}")
+
         self.knapsack = None
         self.selected_items = None
         self.current_pos = 0
