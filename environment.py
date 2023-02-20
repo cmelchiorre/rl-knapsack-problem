@@ -77,7 +77,7 @@ class KnapsackEnv(gym.Env):
 
         n = len(self.knapsack.items)
         
-        obs = np.full(2 + MAX_KNAPSACK_ITEMS * 3, -1, dtype=np.float32)
+        obs = np.full(2 + MAX_KNAPSACK_ITEMS * 3, -1, dtype=np.int32)
         obs[0] = self.knapsack.capacity
         obs[1] = self.current_pos
 

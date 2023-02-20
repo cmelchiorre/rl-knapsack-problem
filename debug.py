@@ -3,127 +3,81 @@ from parsing import *
 from environment import *
 from agent import *
 
-from stable_baselines3 import A2C
-import torch
+from stable_baselines3 import PPO, A2C
+from stable_baselines3.common.monitor import Monitor
+from gym.wrappers import TimeLimit
 
-# Create the A2C model with the device set to the first available GPU
-device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-print(f"using device={device}")
+from stable_baselines3.common.evaluation import evaluate_policy
+from stable_baselines3.common.callbacks import CallbackList, EvalCallback, ProgressBarCallback
+from stable_baselines3.common.callbacks import BaseCallback
 
-from tqdm import tqdm
-
-env = KnapsackEnv()
+from matplotlib import pyplot as plt
 
 import os
-def render( episode, step, pbar=None ):
-    os.system('cls')
-    print(f"episode={episode}, step={step}")
-    print(env.render(mode='text'))
-    # print(env.get_observation())
 
-# 
-# TRAIN (RANDOM AGENT)
-#
+num_episodes = 1000
+steps_per_episode = 10000
+eval_freq = 1000    
 
-# agent = KnapsackRandomAgent(env)
-# agent.play(10, 100, render_callback=render )
-# print("finish")
-
-
-# 
-# STABLE BASELINES 3 AGENT TRAINING
-#
+env = KnapsackEnv()
+env = TimeLimit(env, max_episode_steps=steps_per_episode) 
+# The TimeLimit wrapper will ensure that each episode in the KnapsackEnv will 
+# be limited to at most max_num_steps steps, even if the environment never 
+# returns done=True.
+env = Monitor(env, filename=None, allow_early_resets=True)
+# The Monitor wrapper in OpenAI Gym is used to log various statistics during 
+# training, such as the total reward earned during an episode, the episode 
+# length, and the number of times the agent performed certain actions.
 
 # Create the agent
-agent = A2C('MlpPolicy', env, device=device)
 
-num_episodes = 10000
+# Check if the saved model exists
+model_path = "best_model/best_model.zip"
+if os.path.isfile(model_path):
+    print("reloading trained agent from previous runs...")
+    # Load the pre-trained agent
+    agent = PPO.load(model_path, env)
+else:
+    print("no previous runs found, recreating untrained agent...")
+    # Create a new agent and train it
+    agent = PPO("MlpPolicy", env, verbose=1)
 
-# Create a progress bar
-pbar = tqdm(total=num_episodes)
+# Create an EvalCallback object with the specified parameters
+eval_callback = EvalCallback(
+    eval_env=env, 
+    eval_freq=eval_freq, 
+    n_eval_episodes=10, 
+    log_path='./logs/',
+    best_model_save_path='./best_model/',
+    deterministic=True,
+    render=True,
+    verbose=1,
+    callback_on_new_best=None  # Disable the default logging behavior
+)
 
-# Train the agent for the specified number of episodes
-for e in range(num_episodes):
-    # Train the agent for one episode
-    agent.learn(100, device=device)
-    
-    # Update the progress bar
-    pbar.update(1)
+# Define a custom callback function to log the evaluation results
+def plot_eval(locals, globals):
+    # Extract the relevant variables from the local namespace
+    episode_rewards = locals['self'].episode_rewards
+    global_step = locals['self'].num_timesteps
+    n_evaluations = len(episode_rewards)
 
-# Close the progress bar
-pbar.close()
+    # Plot the evaluation results
+    plt.plot(range(global_step - eval_freq, global_step, eval_freq), episode_rewards)
+    plt.title(f"Average Reward over {n_evaluations} Evaluations")
+    plt.xlabel("Training Steps")
+    plt.ylabel("Average Reward")
+    plt.show()
 
+eval_callback.on_new_best = plot_eval
 
-#
-# EVALUATE
-#
+print("start training...")
 
-# Set the number of episodes and steps to run
-num_episodes = 10
-n_steps_per_episode = 100
+agent.learn( 
+    total_timesteps=num_episodes*steps_per_episode, 
+    callback=CallbackList([eval_callback, ProgressBarCallback()]), 
+    log_interval=1
+)
 
-# Create a progress bar
-pbar = tqdm(total=num_episodes)
-
-# Read evaluation knapsack
-eval_knapsack_fname = f"data\knapsack_01.kps"
-eval_kanpsack = KnapsackParser().from_file(eval_knapsack_fname)
-
-print(f"evaluating {eval_knapsack_fname}...")
-
-rewards = []
-
-
-# Run the agent for N episodes of M steps each
-for e in range(num_episodes):
-    
-    obs = env.reset(knapsack=eval_kanpsack)
-
-    rewards.append([])
-
-    for t in range(n_steps_per_episode):
-        
-        render( e, t, pbar=None )
-        
-        # Take an action using the trained agent
-        action, _ = agent.predict(obs, deterministic=True)
-        
-        # Take a step in the environment
-        obs, reward, done, info = env.step(action)
-        
-        rewards[e].append(reward)
-        
-        # Check if the episode is done
-        if done:
-            break
-
-#
-# PLOT RESULTS
-#
-
-import matplotlib.pyplot as plt
-import matplotlib.cm as cm
-import numpy as np
-
-plt.figure()
-
-# Define the color map
-color_map = cm.get_cmap('Greys', len(rewards))
-
-# Plot each list as a separate line on the same plot
-for i in range(len(rewards)):
-    color = color_map(i)
-    plt.plot(rewards[i], label=f"ep: {i}", color=color)
-
-# Add a legend
-plt.legend()
-
-# Show the plot
-plt.show()
-
-# Add a legend
-plt.legend()
-
-# Show the plot
-plt.show()
+print("training finished...")
 
