@@ -10,20 +10,16 @@ class KnapsackParser():
     '''
 
     def parse_items( self, tokens ):
-        print(f"it:tokens={tokens}")
         name, weight, value = tokens[0]
         return Item(name=name, weight=weight, value=value)
 
     def parse_knapsack( self, tokens ):
-        print(f"pk: tokens: {tokens}")
+
         capacity, items = tokens
-        print(f"pk: capacity: {capacity}")
-        print(f"pk: items: {items}")
+
         knapsack = Knapsack(capacity)
         for item in items:
             knapsack.add_item(item)
-
-        print(f"pk: knapsack:{knapsack}")
 
         return knapsack
 

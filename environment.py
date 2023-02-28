@@ -7,10 +7,11 @@ from entities import *
 from config import *
 from generator import *
 
-ACTION_UP = 1
-ACTION_DOWN = 2
-ACTION_SELECT = 3
-ACTION_UNSELECT = 4
+ACTION_UP = 0
+ACTION_DOWN = 1
+ACTION_SELECT = 2
+ACTION_UNSELECT = 3
+
 ENV_ACTIONS = [ ACTION_UP, ACTION_DOWN, ACTION_SELECT, ACTION_UNSELECT ]
 
 ITEM_SELECTED = 1
@@ -58,7 +59,7 @@ class KnapsackEnv(gym.Env):
         self.observation_space = gym.spaces.Box(
             low=0, high=np.inf,
             shape=(2+(MAX_KNAPSACK_ITEMS*3), ), 
-            dtype=np.int32)
+            dtype=np.float32)
 
         self.action_space = gym.spaces.Discrete(len(ENV_ACTIONS))
 
@@ -77,7 +78,7 @@ class KnapsackEnv(gym.Env):
 
         n = len(self.knapsack.items)
         
-        obs = np.full(2 + MAX_KNAPSACK_ITEMS * 3, -1, dtype=np.int32)
+        obs = np.full(2 + MAX_KNAPSACK_ITEMS * 3, -1, dtype=np.float32)
         obs[0] = self.knapsack.capacity
         obs[1] = self.current_pos
 
@@ -134,9 +135,6 @@ class KnapsackEnv(gym.Env):
 
         obs_ = self.get_observation()
 
-        # check the passed action is valid
-        valid_action = True
-
         previous_state_weight = self.get_total_weight()
         previosu_state_eval = self.get_total_value()
 
@@ -146,8 +144,7 @@ class KnapsackEnv(gym.Env):
             if self.current_pos > 0:
                 self.current_pos -= 1
             else:
-                self.current_pos = 0
-                valid_action = False
+                self.current_pos = len(self.knapsack.items)-1
 
         # ACTION_DOWN
         # increases pointer position unless it is already 0
@@ -155,37 +152,49 @@ class KnapsackEnv(gym.Env):
             if self.current_pos < len(self.knapsack.items)-1:
                 self.current_pos += 1
             else:
-                self.current_pos = len(self.knapsack.items)-1
-                valid_action = False
+                self.current_pos = 0
 
         # ACTION_SELECT
         # adds the item at current position to the set of selected items
         elif action == ACTION_SELECT:
-            # check if by adding the item the total weight overflows capacity 
-            if previous_state_weight + self.knapsack.items[self.current_pos].weight <= self.knapsack.capacity:
-                self.selected_items[self.current_pos] = 1
-            else:
-                valid_action = False
+            self.selected_items[self.current_pos] = 1
 
         # ACTION_UNSELECT
         # removes the item at current position from the set of selected items
         elif action == ACTION_UNSELECT:
             self.selected_items[self.current_pos] = 0
 
+        next_state_weight = self.get_total_weight()
         next_state_eval = self.get_total_value()
 
         obs = self.get_observation()
         done = False
-        info = { 'valid_action': valid_action }
+        info = { 
+            "total_weight": next_state_weight,
+            "capacity": self.knapsack.capacity,
+            "total_weight_rel": (next_state_weight/self.knapsack.capacity),
+             }
 
         # reward is the increase/decrease in value between the two observations 
-        # in case an invalid action was selected return the corresponding penalty
-        reward = ( next_state_eval - previosu_state_eval 
-                        if valid_action 
-                            else PENALTY_INVALID_ACTION )
-        debug(f"[env:step] returning self.knapsack={self.knapsack}")
+        # in case maximum capacity is exceeded, change the sign of the reward (decreasing
+        # value, which corresponds to a decreasing weight, is considered positive instead of
+        # negative)
+        reward = next_state_eval - previosu_state_eval 
+        if max(previous_state_weight, next_state_weight) > self.knapsack.capacity:
+            reward = -(reward * self._get_exceed_reward_factor())
+
         return obs, reward, done, info
 
+  
+    def _get_exceed_reward_factor(self):
+        '''
+        negative reward for exceeding the capacity is multiplied by a constant
+        factor in order to discourage item selections just over the knapsack 
+        capacity
+
+        @TODO: experimenting values
+        '''
+        return 2
 
     def reset(self, knapsack=None):
         """
@@ -200,9 +209,9 @@ class KnapsackEnv(gym.Env):
 
         self.current_pos = 0
         self.selected_items = self.selected_items = [0] * len(self.knapsack.items)
-        debug(f"[env:reset] returning self.knapsack={self.knapsack}")
-        return self.get_observation()
 
+        return self.get_observation()
+  
     def render(self, mode='text'):
 
         self.__check_initialized_environment()
@@ -211,7 +220,9 @@ class KnapsackEnv(gym.Env):
             str = "-"*100+"\n"
             str += f"capacity = {self.knapsack.capacity}\n"
             str += f"current_pos = {self.current_pos}\n"
+            str += f"total weight = {self.get_total_weight()}\n"
             str += f"total value = {self.get_total_value()}\n"
+            
             str += "--------\n"
             for idx, item in enumerate(self.knapsack.items):
                 str += ( "[ ] " if self.selected_items[idx] == 0 else "[X] ")
@@ -230,6 +241,7 @@ class KnapsackEnv(gym.Env):
         debug(f"[env:close] self.knapsack={self.knapsack}")
 
         self.knapsack = None
+        
         self.selected_items = None
         self.current_pos = 0
 

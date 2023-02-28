@@ -23,7 +23,7 @@ class KnapsackRandomGenerator():
             total_weight += item_weight
             items.append(item)
 
-        capacity = random.randint( total_weight//2, total_weight)
+        capacity = random.randint( total_weight//4, total_weight)
         
         knapsack = Knapsack(capacity)
         for item in items:
