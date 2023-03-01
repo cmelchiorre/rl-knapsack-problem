@@ -181,7 +181,8 @@ class KnapsackEnv(gym.Env):
         # negative)
         reward = next_state_eval - previosu_state_eval 
         if max(previous_state_weight, next_state_weight) > self.knapsack.capacity:
-            reward = -(reward * self._get_exceed_reward_factor())
+            # reward = -(reward * self._get_exceed_reward_factor())
+            reward = -reward
 
         return obs, reward, done, info
 
@@ -218,11 +219,10 @@ class KnapsackEnv(gym.Env):
         
         if mode == 'text':
             str = "-"*100+"\n"
-            str += f"capacity = {self.knapsack.capacity}\n"
-            str += f"current_pos = {self.current_pos}\n"
             str += f"total weight = {self.get_total_weight()}\n"
+            str += f"capacity = {self.knapsack.capacity}\n"
             str += f"total value = {self.get_total_value()}\n"
-            
+            str += f"current_pos = {self.current_pos}\n"
             str += "--------\n"
             for idx, item in enumerate(self.knapsack.items):
                 str += ( "[ ] " if self.selected_items[idx] == 0 else "[X] ")

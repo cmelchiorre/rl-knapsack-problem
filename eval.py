@@ -49,8 +49,6 @@ else:
     print("no previous runs found, exiting...")
     sys.exit(0)
 
-
-
 # debug
 # print(f"learning_rate: {agent.learning_rate}")
 # print(f"batch_size: {agent.batch_size}")
@@ -60,7 +58,6 @@ else:
 # print(f"n_epochs: {agent.n_epochs}")
 # print(f"n_steps: {agent.n_steps}")
 # sys.exit(0)
-
 
 action_name = { 
     ACTION_UP: 'ACTION_UP', 
@@ -92,7 +89,7 @@ parser.add_argument(
     help='Number of steps',
 )
 
-parser.add_argument('-d', '--debug', action='store_false')
+parser.add_argument('-d', '--debug', action='store_true')
 
 args = parser.parse_args()
 
@@ -193,7 +190,6 @@ ax3 = ax1.twinx()
 ax2.plot(values_history, color='orange', alpha=0.5)
 ax2.set_ylabel('Values', color='orange')
 ax2.tick_params(axis='y', labelcolor='green')
-
 
 # Set the x-axis label
 ax1.set_xlabel('X-axis')

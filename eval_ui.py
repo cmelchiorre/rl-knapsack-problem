@@ -15,12 +15,17 @@ class QKnapsackEvalWindow(QtbDashboardWindow):
         self.init_dashboard()
 
     def select_knapsack(self):
-        pass
+        file_dialog = QtbFileDialog()
+        if file_dialog.exec():
+            self.knapsack_file_path = file_dialog.file_path_edit.text()
+            self.show_messagebox(message=f"Selected {self.knapsack_file_path}")
+        else:
+            self.show_messagebox(message=f"Canceled")
         
-    def show_messagebox(self):
+    def show_messagebox(self, message="This is a message box"):
         message_box = QtbMessageBox(self)
         message_box.setWindowTitle("Message Box")
-        message_box.setText("This is a message box")
+        message_box.setText(message)
         message_box.setInformativeText("Do you want to close it?")
         message_box.setStandardButtons(QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No )
         message_box.setDefaultButton(QMessageBox.StandardButton.Yes)
@@ -35,8 +40,8 @@ class QKnapsackEvalWindow(QtbDashboardWindow):
     def init_dashboard(self):
         
         # Load
-        btn_load = QPushButton("Sekect knapsack") 
-        btn_load.clicked.connect(self.load_knapsack)
+        btn_load = QPushButton("Select knapsack") 
+        btn_load.clicked.connect(self.select_knapsack)
         self.add_left_widget( btn_load )
         
         # create list control widget
