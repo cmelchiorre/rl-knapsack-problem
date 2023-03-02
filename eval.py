@@ -172,7 +172,7 @@ fig, ax1 = plt.subplots()
 ax1.plot(weight_history, color='blue')
 ax1.set_ylabel('Weights', color='blue')
 ax1.tick_params(axis='y', labelcolor='blue')
-ax1.axhline(y=env.knapsack.capacity, linestyle='--', color='black')
+ax1.axhline(y=env.knapsack.capacity, linestyle='--', color='blue')
 
 ax1.axvline(x=best_obs['index'], color='red', linestyle='-')
 ax1.scatter(x=best_obs['index'], y=best_obs['weight'], color='red', marker='o')
@@ -185,13 +185,16 @@ ax2 = ax1.twinx()
 ax2.plot(cumulative_reward_history, color='green', alpha=0.5)
 ax2.set_ylabel('Rewards', color='green')
 ax2.tick_params(axis='y', labelcolor='green')
+ax2.axhline(y=env.knapsack.capacity, linestyle='--', color='blue')
 
 ax3 = ax1.twinx()
-ax2.plot(values_history, color='orange', alpha=0.5)
-ax2.set_ylabel('Values', color='orange')
-ax2.tick_params(axis='y', labelcolor='green')
+ax3.plot(values_history, color='orange', alpha=0.5)
+ax3.set_ylabel('Values', color='orange')
+ax3.tick_params(axis='y', labelcolor='green')
 
 # Set the x-axis label
 ax1.set_xlabel('X-axis')
 
+figManager = plt.get_current_fig_manager()
+figManager.window.showMaximized()
 plt.show()
