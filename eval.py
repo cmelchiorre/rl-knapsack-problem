@@ -146,7 +146,7 @@ for s in range(args.nsteps):
 
     update_best_obs( s, obs, total_weight, total_value, cumulative_reward )
 
-    if debug:
+    if args.debug:
         os.system('cls')
         print(f"step: {s}")
         print(f"last action: {action_name[action.item()]}")
