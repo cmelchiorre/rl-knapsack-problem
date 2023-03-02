@@ -185,12 +185,12 @@ ax2 = ax1.twinx()
 ax2.plot(cumulative_reward_history, color='green', alpha=0.5)
 ax2.set_ylabel('Rewards', color='green')
 ax2.tick_params(axis='y', labelcolor='green')
-ax2.axhline(y=env.knapsack.capacity, linestyle='--', color='blue')
+ax2.axhline(y=env.knapsack.capacity, linestyle='--', color='green')
 
 ax3 = ax1.twinx()
 ax3.plot(values_history, color='orange', alpha=0.5)
 ax3.set_ylabel('Values', color='orange')
-ax3.tick_params(axis='y', labelcolor='green')
+ax3.tick_params(axis='y', labelcolor='orange')
 
 # Set the x-axis label
 ax1.set_xlabel('X-axis')
