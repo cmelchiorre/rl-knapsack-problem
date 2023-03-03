@@ -202,7 +202,7 @@ class KnapsackEnv(gym.Env):
         Resets the environment to the state corresponding to the given knapsack
         If Non is passed as parameter, a random knapsack is generated
         """
-        debug(f"[env:reset] self.knapsack={self.knapsack}")
+        print(f"[env:reset] self.knapsack={self.knapsack}")
         if knapsack is not None:
             self.knapsack = knapsack
         else:

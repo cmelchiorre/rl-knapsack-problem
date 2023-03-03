@@ -71,7 +71,6 @@ action_name = {
 # Eval loop
 #
 
-# Read the knapsack
 import argparse
 
 parser = argparse.ArgumentParser()
