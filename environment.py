@@ -57,9 +57,9 @@ class KnapsackEnv(gym.Env):
         self.selected_items = []
                 
         self.observation_space = gym.spaces.Box(
-            low=0, high=np.inf,
+            low=-np.inf, high=np.inf,
             shape=(2+(MAX_KNAPSACK_ITEMS*3), ), 
-            dtype=np.float32)
+            dtype=np.float64)
 
         self.action_space = gym.spaces.Discrete(len(ENV_ACTIONS))
 
@@ -78,7 +78,7 @@ class KnapsackEnv(gym.Env):
 
         n = len(self.knapsack.items)
         
-        obs = np.full(2 + MAX_KNAPSACK_ITEMS * 3, -1, dtype=np.float32)
+        obs = np.full(2 + MAX_KNAPSACK_ITEMS * 3, -1, dtype=np.float64)
         obs[0] = self.knapsack.capacity
         obs[1] = self.current_pos
 
@@ -202,7 +202,7 @@ class KnapsackEnv(gym.Env):
         Resets the environment to the state corresponding to the given knapsack
         If Non is passed as parameter, a random knapsack is generated
         """
-        print(f"[env:reset] self.knapsack={self.knapsack}")
+        # print(f"[env:reset] self.knapsack={self.knapsack}")
         if knapsack is not None:
             self.knapsack = knapsack
         else:
