@@ -15,7 +15,7 @@ os.system('cls')
 
 # ##############################################################################
 #
-# Argparse
+# Read configuration
 #
 # example
 # python train.py -x=ppo_model -n=614400 -d
@@ -25,65 +25,26 @@ import argparse
 
 parser = argparse.ArgumentParser()
 
-
-parser.add_argument(
-    '-p', '--model_path', 
-    type=str,
-    default='./models/ppo',
-    help='path of folder where models are saved',
-)
-
-parser.add_argument(
-    '-x', '--model_prefix', 
-    type=str,
-    required=True,
-    default='ppo_model',
-    help='models are saved as {model_path}/{model_prefix}_{n}_steps.zip',
-)
-
-parser.add_argument(
-    '-n', '--n_saved_iterations', 
-    type=int,
-    default=0,
-    help='models are saved as {model_path}/{model_prefix}_{n_saved_iterations}_steps.zip',
-)
-
-parser.add_argument(
-    '-e', '--num_episodes', 
-    type=int,
-    default=1000,
-    help='Number of episodes to train the agent',
-)
-
-parser.add_argument(
-    '-s', '--steps_per_episode', 
-    type=int,
-    default=2048,
-    help='Number of steps_per_episode per episod',
-)
-
-parser.add_argument(
-    '-f', '--eval_freq', 
-    type=int,
-    default=2048,
-    help='Evaluation frequency',
-)
-
-parser.add_argument('-d', '--debug', action='store_true')
+parser.add_argument( '-c', '--config', type=str, default='train.cfg', 
+                    help='train configuration file')
 
 args = parser.parse_args()
 
-model_path = args.model_path
-model_prefix = args.model_prefix
-debug = args.debug # not used yet
-num_episodes = args.num_episodes
-steps_per_episode = args.steps_per_episode
-n_saved_iterations = args.n_saved_iterations
-eval_freq = args.eval_freq
+import yaml
+
+config = yaml.safe_load(open(args.config, 'r'))
+
+model_path = config["model_path"]
+model_prefix = config["model_prefix"]
+debug = config["debug"]
+num_episodes = config["num_episodes"]
+steps_per_episode = config["steps_per_episode"]
+n_saved_iterations = config["n_saved_iterations"]
+eval_freq = config["eval_freq"]
 
 if debug: 
     print("args settings: ")
-    for key, value in vars(args).items():
+    for key, value in config.items():
         print(key + ': ' + str(value))
 
 
@@ -96,6 +57,10 @@ env = KnapsackEnv()
 env = TimeLimit(env, max_episode_steps=steps_per_episode) 
 # env = Monitor(env, filename=None, allow_early_resets=True) 
 
+# from stable_baselines3.common.env_util import make_vec_env
+# from stable_baselines3.common.vec_env import DummyVecEnv, SubprocVecEnv
+
+# env = make_vec_env(env, n_envs=6, seed=0, vec_env_cls=SubprocVecEnv)
 
 # ##############################################################################
 #
@@ -109,7 +74,7 @@ checkpoint_callback = CheckpointCallback( \
         save_path=f"{model_path}", 
         name_prefix=f"{model_prefix}")
 
-if model_path == "new":
+if n_saved_iterations == 0:
     agent_new = True
     print("recreating untrained agent...")
     # Create a new agent and train it
@@ -140,7 +105,8 @@ try:
         # training with a new agent
         model_history = agent.learn(
             total_timesteps=num_episodes*steps_per_episode,
-            log_interval=1
+            log_interval=1,
+            callback=CallbackList([checkpoint_callback, ProgressBarCallback()]), 
         )
 
     else:
