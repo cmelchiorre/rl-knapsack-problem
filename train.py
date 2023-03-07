@@ -10,6 +10,8 @@ from gym.wrappers import TimeLimit
 from stable_baselines3.common.callbacks import CallbackList, ProgressBarCallback, CheckpointCallback
 
 import os, sys
+import argparse
+import yaml
 
 os.system('cls')
 
@@ -21,18 +23,14 @@ os.system('cls')
 # python train.py -x=ppo_model -n=614400 -d
 #
 
-import argparse
+def read_config():
+    parser = argparse.ArgumentParser()
+    parser.add_argument( '-c', '--config', type=str, default='train.cfg', 
+                        help='train configuration file')
+    args = parser.parse_args()
+    return yaml.safe_load(open(args.config, 'r'))
 
-parser = argparse.ArgumentParser()
-
-parser.add_argument( '-c', '--config', type=str, default='train.cfg', 
-                    help='train configuration file')
-
-args = parser.parse_args()
-
-import yaml
-
-config = yaml.safe_load(open(args.config, 'r'))
+config = read_config()
 
 model_path = config["model_path"]
 model_prefix = config["model_prefix"]
@@ -55,12 +53,10 @@ if debug:
 
 env = KnapsackEnv()
 env = TimeLimit(env, max_episode_steps=steps_per_episode) 
-# env = Monitor(env, filename=None, allow_early_resets=True) 
 
 # from stable_baselines3.common.env_util import make_vec_env
 # from stable_baselines3.common.vec_env import DummyVecEnv, SubprocVecEnv
-
-# env = make_vec_env(env, n_envs=6, seed=0, vec_env_cls=SubprocVecEnv)
+# env = make_vec_env(env, n_envs=6, seed=0, vec_env_cls=DummyVecEnv)
 
 # ##############################################################################
 #

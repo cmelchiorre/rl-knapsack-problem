@@ -235,7 +235,6 @@ class KnapsackEnv(gym.Env):
         #   ...
         return None
 
-
     def close(self):
         
         debug(f"[env:close] self.knapsack={self.knapsack}")

@@ -15,12 +15,32 @@ from matplotlib import pyplot as plt
 
 import os
 import sys
-
-num_episodes = 1000
-steps_per_episode = 2048
-eval_freq = 2048
+import yaml
+import argparse
 
 os.system('cls')
+
+def read_config():
+    parser = argparse.ArgumentParser()
+    parser.add_argument( '-c', '--config', type=str, default='eval.cfg', 
+                        help='eval configuration file')
+    args = parser.parse_args()
+    return yaml.safe_load(open(args.config, 'r'))
+
+config = read_config()
+
+model_path = config["model_path"]
+model_prefix = config["model_prefix"]
+debug = config["debug"]
+steps_per_episode = config["steps_per_episode"]
+n_saved_iterations = config["n_saved_iterations"]
+knapsack_name = config["knapsack_name"]
+eval_steps = config["eval_steps"]
+
+if debug: 
+    print("args settings: ")
+    for key, value in config.items():
+        print(key + ': ' + str(value))
 
 # ##############################################################################
 #
@@ -28,7 +48,7 @@ os.system('cls')
 #
 
 env = KnapsackEnv()
-env = TimeLimit(env, max_episode_steps=steps_per_episode) 
+# env = TimeLimit(env, max_episode_steps=steps_per_episode) 
 env = Monitor(env, filename=None, allow_early_resets=True)
 
 # ##############################################################################
@@ -39,15 +59,16 @@ env = Monitor(env, filename=None, allow_early_resets=True)
 #
 
 # Check if the saved model exists
-#model_path = "best_model/best_model.zip"
-model_path = f"models/ppo/best_model.zip"
-if os.path.isfile(model_path):
-    print("reloading trained agent from previous runs...")
+
+if os.path.isfile(f"{model_path}/{model_prefix}_{n_saved_iterations}_steps.zip"):
+    print("reloading trained agent from previous runs ...")
     # Load the pre-trained agent
-    agent = PPO.load(model_path, env)
+    agent = PPO.load(
+        f"{model_path}/{model_prefix}_{n_saved_iterations}_steps.zip", env)
 else:
-    print("no previous runs found, exiting...")
+    print(f"ERROR: cannot load {model_path}/{model_prefix}_{n_saved_iterations}_steps.zip")
     sys.exit(0)
+
 
 # debug
 # print(f"learning_rate: {agent.learning_rate}")
@@ -71,28 +92,7 @@ action_name = {
 # Eval loop
 #
 
-import argparse
-
-parser = argparse.ArgumentParser()
-parser.add_argument(
-    '-k', '--kname', 
-    type=str,
-    default='knapsack_01.kps',
-    help='.kps file name',
-)
-
-parser.add_argument(
-    '-s', '--nsteps', 
-    type=int,
-    default=100,
-    help='Number of steps',
-)
-
-parser.add_argument('-d', '--debug', action='store_true')
-
-args = parser.parse_args()
-
-knapsack = KnapsackParser().from_file(os.path.join('.', 'data', args.kname))
+knapsack = KnapsackParser().from_file(os.path.join('.', 'data', knapsack_name))
 
 # iterates on episodes. on each iteration check if the current solution (obs) is
 # the best one. best solution has the maximum total value without exceeding the 
@@ -130,7 +130,7 @@ def update_best_obs( index, obs, tot_weight, tot_value, cumulative_reward ):
         }
 
 
-for s in range(args.nsteps):
+for s in range(eval_steps):
 
     action, _ = agent.predict(obs)
     obs, reward, done, info = env.step(action)
@@ -145,7 +145,7 @@ for s in range(args.nsteps):
 
     update_best_obs( s, obs, total_weight, total_value, cumulative_reward )
 
-    if args.debug:
+    if debug:
         os.system('cls')
         print(f"step: {s}")
         print(f"last action: {action_name[action.item()]}")
@@ -157,6 +157,7 @@ for s in range(args.nsteps):
     # if s % 100 == 0:
     elif s % 100 == 0:
         os.system('cls')
+        print(f"step: {s}")
         print(env.render(mode='text'))
     if done == True:
         break
@@ -164,36 +165,58 @@ for s in range(args.nsteps):
     #     break
 
 
-# Create a figure and an axis object
-fig, ax1 = plt.subplots()
+# Print best obs
+# best_obs = {
+#     'index': -1,
+#     'obs': None,
+#     'weight': 0,
+#     'value': 0,
+#     'cumulative_reward': 0
+# }
 
-# Plot the first data on the original y-axis
-ax1.plot(weight_history, color='blue')
-ax1.set_ylabel('Weights', color='blue')
-ax1.tick_params(axis='y', labelcolor='blue')
-ax1.axhline(y=env.knapsack.capacity, linestyle='--', color='blue')
+os.system('cls')
+obs_repr = f"best observation: {best_obs['index']}\n"
+obs_repr += "-"*100+"\n"
+obs_repr += f"weight: {best_obs['weight']}\n"
+obs_repr += f"capacity: {best_obs['obs'][0]}\n"
+obs_repr += f"value: {best_obs['value']}\n"
+obs_repr += "--------\n"
+best_obs_items = obs[2:].reshape(-1, 3)
+for idx, item in enumerate(best_obs_items):
+    if item[0] == -1:
+        break
+    obs_repr += ( "[ ] " if item[2] == 0 else "[X] ")
+    obs_repr += f"{knapsack.items[idx].name} w={item[0]} v={item[1]}\n"
+print(obs_repr)
 
-ax1.axvline(x=best_obs['index'], color='red', linestyle='-')
-ax1.scatter(x=best_obs['index'], y=best_obs['weight'], color='red', marker='o')
+# create the figure and subplots
+fig, axs = plt.subplots(nrows=3, ncols=1, figsize=(12,4))
 
+# plot each list on its own subplot
+axs[0].plot(weight_history, color='green')
+axs[0].set_title('Weights')
+axs[0].set_ylabel('weight_history')
+axs[0].axhline(y=env.knapsack.capacity, linestyle='--', color='green')
+axs[0].axvline(x=best_obs['index'], color='red', linestyle='-')
+axs[0].scatter(x=best_obs['index'], y=best_obs['weight'], color='red', marker='o')
 
-# Create a new y-axis with a different scale
-ax2 = ax1.twinx()
+axs[1].plot(cumulative_reward_history, color='blue')
+axs[1].set_title('Cum Rewards')
+axs[1].set_ylabel('cumulative_reward_history')
+axs[1].axhline(y=0, linestyle='--', color='blue')
+axs[1].axvline(x=best_obs['index'], color='red', linestyle='-')
+axs[1].scatter(x=best_obs['index'], y=best_obs['cumulative_reward'], color='red', marker='o')
 
-# Plot the second data on the new y-axis
-ax2.plot(cumulative_reward_history, color='green', alpha=0.5)
-ax2.set_ylabel('Rewards', color='green')
-ax2.tick_params(axis='y', labelcolor='green')
-ax2.axhline(y=0, linestyle='--', color='green')
+axs[2].plot(values_history, color='orange')
+axs[2].set_title('Values')
+axs[2].set_ylabel('values_history')
+axs[2].axvline(x=best_obs['index'], color='orange', linestyle='-')
+axs[2].scatter(x=best_obs['index'], y=best_obs['value'], color='red', marker='o')
 
-ax3 = ax1.twinx()
-ax3.plot(values_history, color='orange', alpha=0.5)
-ax3.set_ylabel('Values', color='orange')
-ax3.tick_params(axis='y', labelcolor='orange')
+# adjust subplot spacing
+plt.subplots_adjust(wspace=0.4)
 
-# Set the x-axis label
-ax1.set_xlabel('X-axis')
-
+# show the plot
 figManager = plt.get_current_fig_manager()
 figManager.window.showMaximized()
 plt.show()
