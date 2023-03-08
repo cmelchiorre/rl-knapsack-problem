@@ -129,8 +129,9 @@ def update_best_obs( index, obs, tot_weight, tot_value, cumulative_reward ):
             'cumulative_reward': cumulative_reward
         }
 
+from tqdm import trange
 
-for s in range(eval_steps):
+for s in trange(eval_steps):
 
     action, _ = agent.predict(obs)
     obs, reward, done, info = env.step(action)
@@ -156,9 +157,10 @@ for s in range(eval_steps):
         input("press a key...")
     # if s % 100 == 0:
     elif s % 100 == 0:
-        os.system('cls')
-        print(f"step: {s}")
-        print(env.render(mode='text'))
+        # os.system('cls')
+        # print(f"step: {s}")
+        # print(env.render(mode='text'))
+        pass
     if done == True:
         break
     # if input('continue Y|n ?') == 'n':
