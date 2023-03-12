@@ -203,5 +203,8 @@ QListWidget::item:hover {{
     color: {COLOR_TEXT_LIGHTER};
     border: 0px;
 }}
+QDialogButtonBox {{
+    background-color: {COLOR_BACKGROUND_01};
+}}
 '''
 

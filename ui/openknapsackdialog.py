@@ -47,7 +47,7 @@ class OpenKnapsackDialog(QDialog):
         button_box.setContentsMargins( 0, 5, 10, 0 )
         button_box.accepted.connect(self.accept)
         button_box.rejected.connect(self.reject)
-        
+
         return button_box
     
     def accept(self):

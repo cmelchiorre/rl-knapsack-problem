@@ -73,7 +73,7 @@ class QKnapsackApplication(QApplication):
         # self.show_messagebox(message=f"Selected {self.knapsack_file_path}")
         self.knapsack = KnapsackParser().from_file(os.path.join('.', 'data', knapsack_file_name))
         self.env.reset(knapsack=self.knapsack)
-        self.window.eval_updated_signal.emit(self.env.render(mode='text'))
+        self.window.eval_updated_signal.emit(0, self.env)
 
     def update_best_obs( self, index, obs, tot_weight, tot_value, cumulative_reward ):
 
@@ -122,36 +122,18 @@ class QKnapsackApplication(QApplication):
             self.update_best_obs( s, obs, total_weight, total_value, cumulative_reward )
 
             if s % 100 == 0:
-               
-                obs_string = \
-                    f"step: {s}\n" + \
-                    f"last action: {action_name[action.item()]}\n" + \
-                    f"reward: {reward}\n" + \
-                    f"cumulative reward: {cumulative_reward}\n" + \
-                    self.env.render(mode='text') + "\n"
-
-                self.window.eval_updated_signal.emit(obs_string)
+                self.window.eval_updated_signal.emit(s, self.env)
             
             if done == True:
                 break
             
-        # self.plot_results(weight_history, cumulative_reward_history, values_history)
-        
-        obs_repr = f"BEST OBSERVATION: {self.best_obs['index']}\n"
-        obs_repr += "-"*100+"\n"
-        obs_repr += f"weight: {self.best_obs['weight']}\n"
-        obs_repr += f"capacity: {self.best_obs['obs'][0]}\n"
-        obs_repr += f"value: {self.best_obs['value']}\n"
-        obs_repr += "--------\n"
+        # Reset item selection in self.env as settings in best_obs
         best_obs_items = self.best_obs["obs"][2:].reshape(-1, 3)
         for idx, item in enumerate(best_obs_items):
-            if item[0] == -1:
-                break
-            obs_repr += ( "[ ] " if item[2] == 0 else "[X] ")
-            obs_repr += f"{self.env.knapsack.items[idx].name} w={item[0]} v={item[1]}\n"
-
-        # self.btn_load.setEnabled(True)
-        self.window.eval_finished_signal.emit(obs_string, self.best_obs, weight_history, cumulative_reward_history, values_history)
+            if idx < len(self.env.selected_items):
+                self.env.selected_items[idx] = item[2]
+        
+        self.window.eval_finished_signal.emit(self.best_obs['index'], self.env, weight_history, cumulative_reward_history, values_history)
 
 if __name__ == '__main__':
 
@@ -162,7 +144,10 @@ if __name__ == '__main__':
                         help='eval configuration file')
     args = parser.parse_args()
  
-    app = QKnapsackApplication(sys.argv, args.config)
+    try:
+        app = QKnapsackApplication(sys.argv, args.config)
 
-    sys.exit(app.exec())
-
+        sys.exit(app.exec())
+    except Exception as e:
+        print(f"Exception caught: {e}")
+        sys.exit(1)

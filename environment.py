@@ -213,6 +213,7 @@ class KnapsackEnv(gym.Env):
 
         return self.get_observation()
   
+    
     def render(self, mode='text'):
 
         self.__check_initialized_environment()
