@@ -1,5 +1,5 @@
 Knapsack( 
-	capacity=822, 
+	capacity=600, 
 	items=(
 		('mug', w=98, v=73),
 		('map', w=51, v=195),

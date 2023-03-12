@@ -1,5 +1,5 @@
 Knapsack( 
-	capacity=378, 
+	capacity=300, 
 	items=(
 		('camping_light', w=37, v=233),
 		('pocket_knife', w=50, v=509),

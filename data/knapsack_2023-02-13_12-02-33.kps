@@ -1,5 +1,5 @@
 Knapsack( 
-	capacity=1061, 
+	capacity=800, 
 	items=(
 		('food', w=7, v=80),
 		('bowl', w=55, v=898),

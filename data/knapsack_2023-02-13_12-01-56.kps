@@ -1,5 +1,5 @@
 Knapsack( 
-	capacity=965, 
+	capacity=600, 
 	items=(
 		('pan', w=8, v=206),
 		('matches', w=96, v=116),

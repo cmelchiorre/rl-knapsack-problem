@@ -1,5 +1,5 @@
 Knapsack( 
-	capacity=833, 
+	capacity=600, 
 	items=(
 		('camping_fork', w=42, v=243),
 		('mirror', w=89, v=180),

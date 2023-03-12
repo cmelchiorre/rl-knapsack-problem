@@ -1,5 +1,5 @@
 Knapsack( 
-	capacity=1199, 
+	capacity=600, 
 	items=(
 		('sunscreen', w=82, v=163),
 		('mug', w=63, v=636),
